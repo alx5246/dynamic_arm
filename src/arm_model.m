@@ -1,0 +1,76 @@
+function [theta_1, theta_dot_1, theta_2, theta_dot_2, theta_3, theta_dot_3] = arm_model(theta_1, theta_2, theta_3)
+
+% Setting up arm parameters (excluding muscles)
+
+% Upper arm (length, mass, Intertia, and mass-center)
+L_1 = 0.310; % (m)
+m_1 = 1.930; % (kg)
+I_1 = 0.0141; % (kg * m^2)
+mc_1 = 0.165; % (m) 
+
+% Fore arm (length, mass, Intertia, and mass-center)
+L_2 = 0.1700; % (m)
+m_2 = 1.3200; % (kg)
+I_2 = 0.0120; % (kg * m^2)
+mc_2 = 0.1350; % (m) 
+
+% Wrist arm (length, mass, Intertia, and mass-center)
+L_3 = 0.1500; % (m)
+m_3 = 0.3500; % (kg)
+I_3 = 0.0010; % (kg * m^2)
+mc_3 = 0.057; % (m) 
+
+% Setting up muscle parameters as used in original paper!
+
+% Muscle l-1
+r_1 = 0.055; % (m)
+s_1 = 0.080; % (m)
+
+% Muscle l-2
+r_2 = 0.055; % (m)
+s_2 = 0.080; % (m)
+
+% Muscle l-3
+r_3 = 0.030; % (m)
+s_3 = 0.120; % (m)
+
+% Muscle l-4
+r_4 = 0.030; % (m)
+s_4 = 0.120; % (m)
+
+% Muscle l-5
+w_51 = 0.040; % (m)
+w_52 = 0.045; % (m)
+
+% Muscle l-6
+w_61 = 0.040; % (m)
+w_62 = 0.045; % (m)
+
+% Muscle l-7
+r_7 = 0.035; % (m)
+s_7 = 0.220; % (m)
+
+% Muscle l-8
+r_8 = 0.050; % (m)
+s_8 = 0.225; % (m)
+
+% Muscle l-9
+w_91 = 0.040; % (m)
+w_92 = 0.030; % (m)
+
+% Finding lengths of the muscles l-1 through l-9
+l = [ (r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^.5; ...
+      (r_2^2 + s_2^2 - 2*r_2*s_2*cos(theta_1))^.5; ...
+      (r_3^2 + s_3^2 + 2*r_3*s_3*cos(theta_2))^.5; ...
+      (r_4^2 + s_4^2 - 2*r_4*s_4*cos(theta_2))^.5; ...
+      (w_51^2 + w_52^2 + L_1^2 + 2*w_51*L_1*cos(theta_1) + 2*w_52*L_1*cos(theta_2) + 2*w_51*w_52*cos(theta_1 + theta_2))^.5; ...
+      (w_61^2 + w_62^2 + L_1^2 - 2*w_61*L_1*cos(theta_1) - 2*w_62*L_1*cos(theta_2) + 2*w_61*w_52*cos(theta_1 + theta_2))^.5; ...
+      (r_7^2 + s_7^2 + 2*r_7*s_7*cos(theta_3))^.5; ...
+      (r_8^2 + s_8^2 - 2*r_8*s_8*cos(theta_3))^.5; ...
+      (w_91^2 + w_92^2 + L_2^2 + 2*w_91*L_2*cos(theta_2) + 2*w_92*L_2*cos(theta_3) + 2*w_91*w_92*cos(theta_2 + theta_3))^.5];
+  
+      
+
+      
+      
+
