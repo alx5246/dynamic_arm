@@ -1,26 +1,32 @@
 function [theta_1_new, theta_1_dot_new, theta_2_new, theta_2_dot_new] = arm_model(theta_1, theta_1_dot, theta_2, theta_2_dot, alpha, dt)
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FUNCTION DESCRIPTION
+%    Given you set the parameters below (hardcoded arm information) you 
+%    can give the current state and control terms and calculate the next 
+%    state using an Euler 1-step scheme. 
+%
 % INPUTS
-% alpha: 9x1 vector of muscle activations over domain 0 <= aplha_i <= 1
-%     where alpha actually equals .... 
+%    alpha: 6x1 vector of muscle activations over domain 0 <= aplha_i <= 1
+%        where alpha actually equals .... 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % STATE BOUNDS
 % I think we need bounds on the arm (as would be in physical reality) or 
 % the arm dynamics at some point will break down. We may also have to
-% sufficienlty alter the dynamics so we do not violate these bounds.
+% sufficienlty alter the dynamics so we do not violate these bounds. In 
+% order to enforce these bounds I will probably have to add a non-linear
+% spring and damper term, or just a simple constraint. 
 theta_1_min = 30.0*(pi/180);
 theta_1_max = 150.0*(pi/180);
 theta_2_min = 30.0*(pi/180);
 theta_2_max = 150.0*(pi/180);
 
+coef_restitution = .1;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Arm parameters (excluding muscles)
+% ARM PARAMETERS (excluding muscles)
 
 % Upper arm (length, mass, Intertia, and mass-center)
 L_1 = 0.310; % (m)
@@ -36,7 +42,7 @@ mc_2 = 0.1350; % (m)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Muscle parameters 
+% MUSCLE PARAMETERS
 
 % Muscle attachment points (as given in the original paper.
 
@@ -65,8 +71,14 @@ w_61 = 0.040; % (m)
 w_62 = 0.045; % (m)
 
 % Muscle rest lengths, these values NEED to be set by the user and is the 
-% rest length of the muscles in the system
-l_0 = .1 * ones(6,1);
+% rest length of the muscles in the system. Check src/utilities/ for 
+% appropriate functions.
+l_0 = [0.0971; ...
+       0.0971; ...
+       0.1237; ...
+       0.1237; ...
+       0.3100; ...
+       0.3100];
 
 % Alpha parameters, these are the f_0 values that scale up our muslce
 % forces
@@ -76,7 +88,7 @@ f_0 = 20 * ones(6,1); % (newtons)
 c_0 = .2 * ones(6,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Muscle length changes 
+% MUSCLE LENGTHS & LENGTH CHANGES 
 
 % Finding lengths of the muscles l-1 through l-9
 l = [ (r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^.5; ...
@@ -105,7 +117,6 @@ W = [ .5*(r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^(-.5) * (-2*r_1*s_1*sin(theta_
 % Now calculate rate of muscle lenth change
 l_dot = W*[theta_1_dot, theta_2_dot]; % should be a 6X1 vector
 
- 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MUSLCE FORCE CALCULATIONS
 
@@ -144,7 +155,7 @@ Fm = P*alpha_hat - P*(A*C+C_0)*l_dot; % should be a 6X1 matrix
 Tm = W'*Fm; % should be a 2X1 matrix;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
-% Arm Dynamic Models
+% ARM DYNAMICS
 
 % H*Theta_dot_dot + S*Theta_dot = Torque
 
@@ -172,7 +183,34 @@ theta_2_dot_new = The_dots(2);
 The = [theta_1;theta_2] + The_dots.*dt;
 theta_1_new = The(1);
 theta_2_new = The(2);
-      
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CONSTRAINT CHECKS
+
+if theta_1_new < theta_1_min
+    theta_1_new = theta_1_min;
+    if theta_1_dot_new < 0
+        theta_1_dot_new = coef_restitution * -1.0 * theta_1_dot_new;
+    end
+elseif theta_1_new > theta_1_max
+    theta_1_new = theta_1_max;
+    if theta_1_dot_new > 0
+        theta_1_dot_new = coef_restitution * -1.0 * theta_1_dot_new;
+    end
+end
+    
+if theta_2_new < theta_2_min
+    theta_2_new = theta_2_min;
+    if theta_2_dot_new < 0
+        theta_2_dot_new = coef_restitution * -1.0 * theta_2_dot_new;
+    end
+elseif theta_2_new > theta_2_max
+    theta_2_new = theta_2_max;
+    if theta_2_dot_new > 0
+        theta_2_dot_new = coef_restitution * -1.0 * theta_2_dot_new;
+    end
+end
+    
       
 
       
