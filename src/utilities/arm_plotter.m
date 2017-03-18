@@ -1,0 +1,110 @@
+function arm_plotter(theta_1, theta_2)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ARM PARAMETERS (excluding muscles)
+
+% Upper arm (length, mass, Intertia, and mass-center)
+L_1 = 0.310; % (m)
+
+% Fore arm (length, mass, Intertia, and mass-center)
+L_2 = 0.1700; % (m)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MUSCLE PARAMETERS
+
+% Muscle attachment points (as given in the original paper.
+
+% Muscle l-1
+r_1 = 0.055; % (m)
+s_1 = 0.080; % (m)
+
+% Muscle l-2
+r_2 = 0.055; % (m)
+s_2 = 0.080; % (m)
+
+% Muscle l-3
+r_3 = 0.030; % (m)
+s_3 = 0.120; % (m)
+
+% Muscle l-4
+r_4 = 0.030; % (m)
+s_4 = 0.120; % (m)
+
+% Muscle l-5
+w_51 = 0.040; % (m)
+w_52 = 0.045; % (m)
+
+% Muscle l-6
+w_61 = 0.040; % (m)
+w_62 = 0.045; % (m)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MUSCLE LENGTHS & LENGTH CHANGES 
+
+% Finding lengths of the muscles l-1 through l-9
+l = [ (r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^.5; ...
+      (r_2^2 + s_2^2 - 2*r_2*s_2*cos(theta_1))^.5; ...
+      (r_3^2 + s_3^2 + 2*r_3*s_3*cos(theta_2))^.5; ...
+      (r_4^2 + s_4^2 - 2*r_4*s_4*cos(theta_2))^.5; ...
+      (w_51^2 + w_52^2 + L_1^2 + 2*w_51*L_1*cos(theta_1) + 2*w_52*L_1*cos(theta_2) + 2*w_51*w_52*cos(theta_1 + theta_2))^.5; ...
+      (w_61^2 + w_62^2 + L_1^2 - 2*w_61*L_1*cos(theta_1) - 2*w_62*L_1*cos(theta_2) + 2*w_61*w_52*cos(theta_1 + theta_2))^.5];
+
+  
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PLOTTING OUT THINGS
+
+figure(1)
+clf
+
+% Plot first arm link
+x = [0, L_1*cos(theta_1)];
+y = [0, L_1*sin(theta_1)];
+plot(x, y, 'b-o', 'LineWidth', 2, 'MarkerSize', 10)
+
+hold on
+
+% Plot second arm link
+x = [L_1*cos(theta_1), L_1*cos(theta_1) + L_2*cos(theta_1+theta_2)];
+y = [L_1*sin(theta_1), L_1*sin(theta_1) + L_2*sin(theta_1+theta_2)];
+plot(x, y, 'b-o', 'LineWidth', 2, 'MarkerSize', 10)
+x = [L_1*cos(theta_1), L_1*cos(theta_1) + 1.1*w_62*cos(theta_1+theta_2-pi)];
+y = [L_1*sin(theta_1), L_1*sin(theta_1) + 1.1*w_62*sin(theta_1+theta_2-pi)];
+plot(x, y, 'b-o', 'LineWidth', 2, 'MarkerSize', 10)
+
+% Plot first muscle
+x = [-r_1, s_1*cos(theta_1)];
+y = [0, s_1*sin(theta_1)];
+plot(x, y, 'g')
+
+% Plot second muscle
+x = [r_2, s_2*cos(theta_1)];
+y = [0, s_2*sin(theta_1)];
+plot(x, y, 'g')
+
+% Plot third muscle
+x = [s_3*cos(theta_1), L_1*cos(theta_1) + r_3*cos(theta_1+theta_2)];
+y = [s_3*sin(theta_1), L_1*sin(theta_1) + r_3*sin(theta_1+theta_2)];
+plot(x, y, 'g')
+
+% Plot fourth muscle
+x = [s_4*cos(theta_1), L_1*cos(theta_1) + r_4*cos(theta_1+theta_2-pi)];
+y = [s_4*sin(theta_1), L_1*sin(theta_1) + r_4*sin(theta_1+theta_2-pi)];
+plot(x, y, 'g')
+
+% Plot fifth muscle
+x = [-w_51, L_1*cos(theta_1) + w_52*cos(theta_1+theta_2)];
+y = [0, L_1*sin(theta_1) + w_52*sin(theta_1+theta_2)];
+plot(x, y, 'g')
+
+% Plot sixth muscle
+x = [w_61, L_1*cos(theta_1) + w_62*cos(theta_1+theta_2-pi)];
+y = [0, L_1*sin(theta_1) + w_62*sin(theta_1+theta_2-pi)];
+plot(x, y, 'g')
+
+% Set plot things
+xlim([-.5, .5])
+ylim([0,.45])
+  
