@@ -1,13 +1,52 @@
 function [theta_1_new, theta_1_dot_new, theta_2_new, theta_2_dot_new] = arm_model(theta_1, theta_1_dot, theta_2, theta_2_dot, alpha, dt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FUNCTION DESCRIPTION
-%    Given you set the parameters below (hardcoded arm information) you 
-%    can give the current state and control terms and calculate the next 
-%    state using an Euler 1-step scheme. 
+%    This is a Euler 1-step simulation of the 6-muscle, 2-link arm. To use
+%    this you provide the current state (all the theta's and theta-dots),
+%    along with a vector alpha, which has the activation level (over the
+%    domain [0,1]) for each muscle, and the time-step length (dt) in
+%    seconds, and this will output the systems next step. 
 %
+%    We assume here the muscle forces are constant over each time-step. 
+%
+%    VERY VERY much of this is hardcoded here. Such things hard coded are
+%    the masses, inertias, lengths, along with all muscle parameters. If 
+%    you change these make sure you also change them appropriately in other
+%    functions/methods like the arm-plotter. 
+%
+%    This model is generated from "On control of reaching movements for
+%    musculo-skeletal redundant arm model" (2009), Tajara et al. Where in
+%    while they use a 3-DOF arm model with 9 muscles, we here have a 2-DOF
+%    arm with 6 muscles. Many of the paramters here by default come from
+%    there paper, these values include
+%        a) lengts of appendages
+%        b) masses and intertia values
+%        c) position of muscles
+%        d) c_0 muscle dampling
+%    other values like, f_0, which is the maximum muscle force output and
+%    l_0 which is the rest lenght of the muscles have generated based on
+%    observations from the paper, though those values are not directly
+%    given. 
+%
+%    The system also has hard limits on the range of motion, as would any
+%    real arm. They are described below is section "STATE BOUNDS". These
+%    bounds are inforced by a simple model wherein if the bound is reached,
+%    the state is set to the maximum value, and the velocities are
+%    reversed. This is a simple way to mimic bouncing off a wall. 
+%        
 % INPUTS
-%    alpha: 6x1 vector of muscle activations over domain 0 <= aplha_i <= 1
-%        where alpha actually equals .... 
+%    theta_1: angle of arm link-1 realtive to coordinate system x-axis, in
+%        radians.
+%    theta_1_dot: angular velocity of arm link-1 relative to coordinate
+%        system in rads/sec. 
+%    theta_2: angle of arm link-2 raltive to arm-link 1, in radians.
+%    theta_2_dot: angular velocity of arm link-2 realtive to arm link-1 in
+%        radians/sec.
+%    alpha: 6x1 vector of muscle activations for each 6 muscles, where the 
+%        order of muscles follows that of the paper this model comes from.
+%
+% OUTPUTS
+%    The new state values. 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -22,8 +61,9 @@ theta_1_max = 150.0*(pi/180);
 theta_2_min = 30.0*(pi/180);
 theta_2_max = 150.0*(pi/180);
 
+% This is how we will determine how much reversal velocity the thing has
+% after it hits the limit. 
 coef_restitution = .1;
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ARM PARAMETERS (excluding muscles)
@@ -82,7 +122,7 @@ l_0 = [0.0971; ...
 
 % Alpha parameters, these are the f_0 values that scale up our muslce
 % forces
-f_0 = 20 * ones(6,1); % (newtons)
+f_0 = 10 * ones(6,1); % (newtons)
 
 % Muscle intrinsic viscosity c_0 as set by the paper is constant and
 c_0 = .2 * ones(6,1);
@@ -115,7 +155,7 @@ W = [ .5*(r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^(-.5) * (-2*r_1*s_1*sin(theta_
       .5*(w_61^2 + w_62^2 + L_1^2 - 2*w_61*L_1*cos(theta_1) - 2*w_62*L_1*cos(theta_2) + 2*w_61*w_62*cos(theta_1 + theta_2))^(-.5) * (2*w_62*L_1*sin(theta_2) - 2*w_61*w_62*sin(theta_1 + theta_2))];
 
 % Now calculate rate of muscle lenth change
-l_dot = W*[theta_1_dot, theta_2_dot]; % should be a 6X1 vector
+l_dot = W*[theta_1_dot; theta_2_dot]; % should be a 6X1 vector
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MUSLCE FORCE CALCULATIONS
@@ -151,8 +191,9 @@ C_0 = diag(c_0);
 % Fm are the forces applied by the muscles!
 Fm = P*alpha_hat - P*(A*C+C_0)*l_dot; % should be a 6X1 matrix 
 
-% Tm is the torque applied by the muscles
-Tm = W'*Fm; % should be a 2X1 matrix;
+% Tm is the torque applied by the muscles. For some reason I think I have
+% shit backwards so I need a negative in front of the this?
+Tm = -W'*Fm; % should be a 2X1 matrix;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 % ARM DYNAMICS
@@ -161,10 +202,10 @@ Tm = W'*Fm; % should be a 2X1 matrix;
 
 H_11 = m_1*(mc_1^2) + I_1 + m_2*(L_1^2 + mc_2^2 + 2*L_1*mc_2*cos(theta_2)) + I_2;
 H_12 = m_2*L_1*mc_2*cos(theta_2) + m_2*(mc_2^2) + I_2;
-H_21 = H12;
+H_21 = H_12;
 H_22 = m_2*mc_2^2 + I_2;
 
-H = [H_11, H12; H21, H22];
+H = [H_11, H_12; H_21, H_22];
 
 h = m_2*L_1*(mc_2^2)*sin(theta_2);
 
@@ -186,6 +227,8 @@ theta_2_new = The(2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONSTRAINT CHECKS
+% These are here to make sure we do not exceede the limits of the system as
+% desired. 
 
 if theta_1_new < theta_1_min
     theta_1_new = theta_1_min;
