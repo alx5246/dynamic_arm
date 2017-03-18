@@ -1,4 +1,28 @@
-function arm_plotter(theta_1, theta_2)
+function arm_plotter(theta_1, theta_2, alpha)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FUNCTION DESCRIPTION
+%    This is a simple plotter of the 2-DOF arm, with 6 muscles. The plotter
+%    will output onto Figure(2), a visual depiction of the system. 
+%
+%    The bones of the system will be in blue.
+%    The muscles when activated will be in red.
+%    The muscles when not activated will be in green.
+%
+%    Much here is hard coded. If you change your simulation and therein
+%    change important parameters in your "arm_model.m" like position of 
+%    muscles or lenths of bones, then you will here too have to make those
+%    same adjustments. 
+%
+% INPUTS
+%     theta_1: the rotation of arm link-1 relative to the x-axis, in
+%         radians.
+%     theta_2: the rotation of arm link-2 relative to arm link-1, in
+%         radians.
+%     alpha: 6x1 muscle activation vector. 
+%
+% OUTPUTS
+%     N/A, simply plots onto Figure(2)
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ARM PARAMETERS (excluding muscles)
@@ -56,8 +80,9 @@ l = [ (r_1^2 + s_1^2 + 2*r_1*s_1*cos(theta_1))^.5; ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PLOTTING OUT THINGS
 
-figure(1)
-clf
+figure(2)
+%clf
+hold off
 
 % Plot first arm link
 x = [0, L_1*cos(theta_1)];
@@ -77,34 +102,65 @@ plot(x, y, 'b-o', 'LineWidth', 2, 'MarkerSize', 10)
 % Plot first muscle
 x = [-r_1, s_1*cos(theta_1)];
 y = [0, s_1*sin(theta_1)];
-plot(x, y, 'g')
+if alpha(1)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Plot second muscle
 x = [r_2, s_2*cos(theta_1)];
 y = [0, s_2*sin(theta_1)];
-plot(x, y, 'g')
+if alpha(2)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Plot third muscle
 x = [s_3*cos(theta_1), L_1*cos(theta_1) + r_3*cos(theta_1+theta_2)];
 y = [s_3*sin(theta_1), L_1*sin(theta_1) + r_3*sin(theta_1+theta_2)];
-plot(x, y, 'g')
+if alpha(3)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Plot fourth muscle
 x = [s_4*cos(theta_1), L_1*cos(theta_1) + r_4*cos(theta_1+theta_2-pi)];
 y = [s_4*sin(theta_1), L_1*sin(theta_1) + r_4*sin(theta_1+theta_2-pi)];
-plot(x, y, 'g')
+if alpha(4)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Plot fifth muscle
 x = [-w_51, L_1*cos(theta_1) + w_52*cos(theta_1+theta_2)];
 y = [0, L_1*sin(theta_1) + w_52*sin(theta_1+theta_2)];
-plot(x, y, 'g')
+if alpha(5)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Plot sixth muscle
 x = [w_61, L_1*cos(theta_1) + w_62*cos(theta_1+theta_2-pi)];
 y = [0, L_1*sin(theta_1) + w_62*sin(theta_1+theta_2-pi)];
-plot(x, y, 'g')
+if alpha(6)>0
+    plot(x, y, 'r')
+else
+    plot(x, y, 'g')
+end
 
 % Set plot things
 xlim([-.5, .5])
 ylim([0,.45])
+
+drawnow
+pause(.05)
+
+hold off
+
+
   
